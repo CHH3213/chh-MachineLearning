@@ -1,0 +1,78 @@
+import torch
+import torch.functional as F
+import numpy as np
+from torch import nn 
+from collections import OrderedDict
+"""
+假设我们需要建立一个全连接的16x64x64x32x1的神经网络。
+"""
+
+def diyNeuralNetwork():
+    """手动建立权重和偏差
+    """
+    input_dim = 16
+    output_dim = 1
+    hidden1_dim = 64
+    hidden2_dim = 32
+    # 随机产生一些随机特征
+    features = torch.randn(1, input_dim)
+    # 构建权重
+    w1 = torch.randn((input_dim, hidden1_dim), requires_grad=True)
+    w2 = torch.randn((hidden1_dim, hidden1_dim), requires_grad=True)
+    w3 = torch.randn((hidden1_dim, hidden2_dim), requires_grad=True)
+    w4 = torch.randn((hidden2_dim, output_dim), requires_grad=True)
+    # 构建偏置
+    b1 = torch.randn((hidden1_dim), requires_grad=True)
+    b2 = torch.randn((hidden1_dim), requires_grad=True)
+    b3 = torch.randn((hidden2_dim), requires_grad=True)
+    b4 = torch.randn((output_dim), requires_grad=True)
+
+    # 构造隐藏层和输出层
+    h1 = F.relu((features @ w1) + b1)
+    h2 = F.relu((h1 @ w2) + b2)
+    h3 = F.relu((h2 @ w3) + b3)
+    out = F.sigmoid((h3 @ w4) + b4)
+
+
+class Net2(nn.Module):
+    """扩展torch.nn.Model类
+    """
+    def __init__(self, input_dim=16, output_dim=1, hidden1_dim=64, hidden2_dim=32):
+        super(Net2, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden1_dim)
+        self.fc2 = nn.Linear(hidden1_dim, hidden1_dim)
+        self.fc3 = nn.Linear(hidden1_dim, hidden2_dim)
+        self.fc4 = nn.Linear(hidden2_dim, output_dim)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        out = F.sigmoid(self.fc4(x))
+        return out
+
+
+class Net4(nn.Module):
+    """使用torch.nn.Sequential序列化进行神经网络创建
+
+    """
+    def __init__(self, input_dim=16, output_dim=1, hidden1_dim=64, hidden2_dim=32):
+        super(Net4, self).__init__()
+        self.layers = nn.Sequential(OrderedDict([
+            ('fc1', nn.Linear(input_dim, hidden1_dim)),
+            ('relu1', nn.ReLU()),
+            ('fc2', nn.Linear(hidden1_dim, hidden1_dim)),
+            ('relu2', nn.ReLU()),
+            ('fc3', nn.Linear(hidden1_dim, hidden2_dim)),
+            ('relu3', nn.ReLU()),
+            ('fc4', nn.Linear(hidden2_dim, output_dim)),
+        ])
+        )
+
+    def forward(self, x):
+        out = F.sigmoid(self.layers(x))
+        return out
+
+
+model4 = Net4()
+print(model4)
